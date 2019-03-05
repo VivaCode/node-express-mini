@@ -16,6 +16,7 @@ server.get('/', (req, res) => {
 });
 
 server.get('/api/users', (req,res) => {
+    console.log(req)
     db
     .find()
     .then(users => {
@@ -25,14 +26,17 @@ server.get('/api/users', (req,res) => {
 });
 
 server.get('/api/users/:id', (req, res) => {
+    
+    const {id} = req.params;
+    if(db.length === 0) {
+        return (
+            res.status(404).json({message: 'user not found'}, res)
+        )
+    }
     db
-    .findById(id)
-    .then(users => {
-        if(users.length === 0) {
-            res.status(404).json({message: 'user not found'});
-        } else {
-            res.json(users[0]);
-        }
+    .findById({id})
+    .then(res => {
+            res.json(res)
     })
     .catch(err => {
         res.json(err)
@@ -40,19 +44,22 @@ server.get('/api/users/:id', (req, res) => {
 });
 
 server.post('/api/users', (req,res) => {
-    const userInfo = req.body;
-    console.log("userInfo", userInfo);
+    const {name, bio} = req.body;
+    if(!name || !bio) {
+        return( 
+            res.send({error: 400, message: 'Must provide name and bio'})
+        )
+    }
     db
-    .insert(userInfo)
+    .insert({
+        name,
+        bio
+    })
     .then(response => {
         res.status(201).json(response);
     })
     .catch(err => {
-        if (err.errno === 19) {
-            res.status(400).json({msg: 'please provide all required fields'})
-        } else {
-            res.status(500).json({error: err});
-        }
+       res.status(500).json({error: err});
     });
 });
 
